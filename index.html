@@ -1,0 +1,1128 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gerador de Folhas de Atividades — Matemática</title>
+<style>
+/* ============ BASE ============ */
+:root{
+  --bg:#eceff4; --papel:#fff; --tinta:#11161d; --cinza:#5b6673; --linha:#d7dde5;
+  --acento:#1f5f9e; --acento-2:#164a7c; --ok:#1f7a4c; --alerta:#a4570c;
+  --cw:6mm; --fs:4.3mm; --lh:5.4mm; --traco:.42mm;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  font-family:ui-sans-serif,system-ui,"Segoe UI",Roboto,Arial,sans-serif;
+  background:var(--bg); color:var(--tinta); -webkit-font-smoothing:antialiased;
+  font-size:14px;
+}
+button,input,select{font:inherit;color:inherit}
+
+/* ============ ESTRUTURA ============ */
+.app{display:grid;grid-template-columns:352px minmax(0,1fr);height:100vh;overflow:hidden}
+.painel{
+  background:#fff;border-right:1px solid var(--linha);overflow-y:auto;display:flex;
+  flex-direction:column;gap:0;padding:0 0 92px;min-height:0;
+}
+.marca{display:flex;gap:10px;align-items:center;padding:18px 20px 14px;border-bottom:1px solid var(--linha)}
+.marca .logo{
+  width:34px;height:34px;border-radius:9px;background:var(--acento);color:#fff;
+  display:grid;place-items:center;font-size:19px;font-weight:700;flex:none;
+}
+.marca h1{font-size:15px;margin:0;font-weight:650;letter-spacing:-.01em}
+.marca p{margin:1px 0 0;font-size:11.5px;color:var(--cinza)}
+
+.bloco{padding:14px 20px;border-bottom:1px solid var(--linha)}
+.bloco h2{
+  font-size:10.5px;text-transform:uppercase;letter-spacing:.09em;color:var(--cinza);
+  margin:0 0 10px;font-weight:650;
+}
+.linha-campo{display:flex;flex-direction:column;gap:4px;margin-bottom:9px}
+.linha-campo:last-child{margin-bottom:0}
+.linha-campo > span{font-size:11.5px;color:var(--cinza);font-weight:550}
+.linha-campo input{
+  border:1px solid var(--linha);border-radius:7px;padding:7px 9px;background:#fbfcfe;
+  font-size:13px;width:100%;outline:none;
+}
+.linha-campo input:focus{border-color:var(--acento);background:#fff;box-shadow:0 0 0 3px rgba(31,95,158,.12)}
+
+.check{display:flex;align-items:center;gap:8px;font-size:12.5px;cursor:pointer;user-select:none}
+.check input{width:15px;height:15px;accent-color:var(--acento);margin:0}
+
+/* segmentado */
+.seg{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.seg.tres{grid-template-columns:repeat(3,1fr)}
+.seg.cinco{grid-template-columns:repeat(5,1fr)}
+.seg button{
+  border:1px solid var(--linha);background:#fbfcfe;border-radius:7px;padding:8px 4px;
+  font-size:12px;font-weight:550;cursor:pointer;transition:.12s;
+}
+.seg button:hover{border-color:#b9c4d2;background:#f5f8fc}
+.seg button[aria-pressed="true"]{
+  background:var(--acento);border-color:var(--acento);color:#fff;font-weight:650;
+}
+.seg.mista button{grid-column:span 2}
+
+/* niveis */
+#blocoNivel .exemplo{
+  margin-top:10px;background:#f5f8fc;border:1px solid var(--linha);border-radius:8px;padding:9px 11px;
+}
+#blocoNivel .exemplo .conta-ex{
+  font-family:ui-monospace,"Cascadia Mono",Consolas,monospace;font-size:14.5px;font-weight:650;
+  letter-spacing:.01em;color:var(--acento-2);line-height:1.5;
+}
+#blocoNivel .exemplo .regra{font-size:11.5px;color:var(--cinza);line-height:1.45;margin-top:4px}
+#niveisMistos{display:none;flex-direction:column;gap:7px;margin-top:2px}
+#niveisMistos .linha-op{display:grid;grid-template-columns:1fr 92px;gap:8px;align-items:center}
+#niveisMistos select{
+  border:1px solid var(--linha);border-radius:6px;padding:5px 6px;background:#fbfcfe;font-size:12px;
+}
+
+.rodape-painel{
+  position:sticky;bottom:0;margin-top:auto;background:#fff;border-top:1px solid var(--linha);
+  padding:12px 16px;display:flex;flex-direction:column;gap:8px;z-index:5;
+}
+.btn-principal{
+  border:0;border-radius:9px;background:var(--acento);color:#fff;font-weight:650;font-size:14px;
+  padding:12px 16px;cursor:pointer;width:100%;
+}
+.btn-principal:hover{background:var(--acento-2)}
+.btn-sec{
+  border:1px solid var(--linha);border-radius:8px;background:#fbfcfe;padding:8px 10px;
+  font-size:12.5px;cursor:pointer;
+}
+.btn-sec:hover{background:#f2f6fb}
+.dica{font-size:11px;color:var(--cinza);line-height:1.4;margin:0}
+
+/* ============ PALCO ============ */
+.palco{display:flex;flex-direction:column;min-width:0;min-height:0;background:var(--bg)}
+.topo{
+  display:flex;align-items:center;gap:12px;padding:10px 20px;background:#fff;
+  border-bottom:1px solid var(--linha);min-height:46px;flex:none;
+}
+.topo .status{font-size:12.5px;color:var(--cinza)}
+.topo .status b{color:var(--tinta);font-weight:650}
+.topo .aviso{font-size:11.5px;color:var(--alerta);margin-left:14px}
+.topo .zoom{margin-left:auto;display:flex;gap:6px;flex:none}
+.topo .zoom button{
+  border:1px solid var(--linha);background:#fbfcfe;border-radius:6px;padding:5px 10px;
+  font-size:11.5px;cursor:pointer;
+}
+.topo .zoom button[aria-pressed="true"]{background:var(--acento);border-color:var(--acento);color:#fff}
+.rolagem{flex:1;min-height:0;overflow:auto;padding:22px 28px 40px;display:flex;flex-direction:column;align-items:center;gap:26px}
+
+/* ============ FOLHA A4 ============ */
+.page{
+  width:210mm;height:297mm;background:var(--papel);color:#000;
+  padding:11mm 13mm 9mm;flex:none;position:relative;overflow:hidden;
+  box-shadow:0 6px 26px rgba(20,35,55,.16), 0 1px 3px rgba(20,35,55,.1);
+  display:flex;flex-direction:column;
+  -webkit-print-color-adjust:exact;print-color-adjust:exact;
+}
+.cabecalho{flex:none;border-bottom:.45mm solid #000;padding-bottom:2mm;margin-bottom:2.6mm}
+.cab-topo{display:flex;align-items:baseline;justify-content:space-between;gap:6mm}
+.cab-topo .escola{font-size:4.3mm;font-weight:700;line-height:1.15;letter-spacing:.005em}
+.cab-topo .selo{
+  font-size:3mm;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+  border:.35mm solid #000;padding:.6mm 1.8mm;border-radius:1mm;flex:none;
+}
+.cab-linhas{display:flex;gap:5mm;margin-top:2mm;font-size:3mm}
+.campo{display:flex;align-items:baseline;gap:1.4mm;flex:1;min-width:0}
+.campo > b{font-weight:600;white-space:nowrap}
+.campo .valor{flex:1;border-bottom:.22mm dotted #777;min-height:3.4mm;font-size:3mm;padding-bottom:.2mm}
+.cab-nome{margin-top:1.8mm;font-size:3mm}
+.cab-nome .campo{flex:1}
+.cab-titulo{
+  margin-top:2.2mm;font-size:3.5mm;font-weight:700;text-align:center;letter-spacing:.01em;
+}
+.cab-titulo .sub{font-weight:500;font-size:3mm;color:#333}
+
+.folha-grade{
+  flex:1;display:grid;gap:1mm 1.5mm;align-content:stretch;min-height:0;
+}
+.q{
+  position:relative;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;
+  gap:.6mm;padding:.8mm .5mm .4mm;min-width:0;
+}
+.q .num{
+  align-self:stretch;text-align:left;font-size:2.6mm;font-weight:650;color:#222;
+  height:2.6mm;line-height:2.6mm;flex:none;
+}
+.conta{display:flex;align-items:center;justify-content:center}
+
+/* grade de algarismos */
+.grade{display:grid;justify-items:center;align-items:center;margin-right:3.4mm}
+.cel{width:100%;height:100%;display:flex;align-items:center;justify-content:center;
+  font-size:var(--fs);font-weight:600;line-height:1;font-variant-numeric:tabular-nums}
+.cel.sinal{font-weight:500;justify-content:flex-end;padding-right:.9mm}
+.cel.rot{font-size:2.35mm;font-weight:650;color:#333;letter-spacing:.04em}
+.cel.traco{align-self:start;height:0;border-top:var(--traco) solid #000;width:100%}
+.cel.resp{font-weight:650}
+.grade > .cel.resp{height:auto;align-self:start;padding-top:1mm;line-height:1.1}
+
+/* divisão */
+.divisao{display:flex;justify-content:center;padding-top:3.5mm}
+.chave{
+  display:grid;grid-template-columns:max-content .42mm max-content;
+  grid-template-rows:7mm 28mm;align-items:stretch;
+}
+.chave .dvd{grid-area:1/1;display:flex;align-items:flex-end;justify-content:flex-end;gap:0;padding:0 1mm 1mm 0}
+.chave .vbar{grid-area:1/2;background:#000;height:100%}
+.chave .dsr{
+  grid-area:1/3;display:flex;align-items:flex-end;gap:0;border-bottom:.42mm solid #000;
+  padding:0 2mm 1mm 1.6mm;min-width:22mm;
+}
+.chave .trab{grid-area:2/1;position:relative}
+.chave .quot{grid-area:2/3;padding:.3mm 0 0 1.6mm;display:flex;align-items:flex-start}
+.chave .qr{
+  position:absolute;left:0;bottom:0;font-size:2.9mm;font-weight:650;white-space:nowrap;
+  background:#fff;padding-right:1mm;
+}
+.mini-grade{display:grid;justify-items:center;align-items:center}
+
+@media print{
+  @page{size:A4 portrait;margin:0}
+  html,body{background:#fff;height:auto;overflow:visible}
+  .painel,.topo{display:none!important}
+  .app{display:block;height:auto;overflow:visible}
+  .palco{display:block;background:#fff}
+  .rolagem{display:block;padding:0;overflow:visible;background:#fff;gap:0}
+  #paginas{zoom:1!important}
+  .page{
+    width:210mm;height:296.6mm;box-shadow:none;margin:0;break-inside:avoid;
+  }
+  .page + .page{break-before:page;page-break-before:always}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="painel">
+    <div class="marca">
+      <div class="logo">∑</div>
+      <div><h1>Folhas de Matemática</h1><p>Quatro operações · A4 · offline</p></div>
+    </div>
+
+    <section class="bloco">
+      <h2>Cabeçalho da folha</h2>
+      <label class="linha-campo"><span>Escola / Instituição</span>
+        <input id="inEscola" value="" placeholder="Nome da escola"></label>
+      <label class="linha-campo"><span>Professor(a)</span>
+        <input id="inProfessor" value="" placeholder="Nome do(a) professor(a)"></label>
+      <label class="linha-campo"><span>Turma</span>
+        <input id="inTurma" value="" placeholder="Ex.: 4º ano A"></label>
+      <label class="linha-campo"><span>Data</span>
+        <input id="inData" value="____ / ____ / ______"></label>
+      <label class="check"><input type="checkbox" id="inNome" checked> Linha para o nome do aluno</label>
+    </section>
+
+    <section class="bloco">
+      <h2>Operação</h2>
+      <div class="seg cinco" id="segOperacao">
+        <button data-op="add" aria-pressed="false">Adição</button>
+        <button data-op="sub" aria-pressed="false">Subtr.</button>
+        <button data-op="mul" aria-pressed="false">Multip.</button>
+        <button data-op="div" aria-pressed="false">Divisão</button>
+        <button data-op="mista" aria-pressed="true">Mista</button>
+      </div>
+    </section>
+
+    <section class="bloco" id="blocoNivel">
+      <h2>Nível pedagógico</h2>
+      <label class="linha-campo" id="linhaNivel"><span id="rotuloNivel">Nível</span>
+        <select id="selNivel" style="display:none"></select>
+      </label>
+      <div class="seg cinco" id="segNivel"></div>
+      <div id="niveisMistos"></div>
+      <div class="exemplo">
+        <div class="conta-ex" id="exConta">—</div>
+        <div class="regra" id="exRegra">—</div>
+      </div>
+    </section>
+
+    <section class="bloco">
+      <h2>Quantidade e colunas</h2>
+      <label class="linha-campo"><span>Questões</span>
+        <select id="selQtd">
+          <option>8</option><option>12</option><option selected>16</option><option>20</option>
+        </select></label>
+      <div class="seg tres" id="segColunas" style="margin-top:2px">
+        <button data-col="2" aria-pressed="false">2 col.</button>
+        <button data-col="3" aria-pressed="false">3 col.</button>
+        <button data-col="4" aria-pressed="true">4 col.</button>
+      </div>
+    </section>
+
+    <section class="bloco">
+      <h2>Opções</h2>
+      <label class="check" style="margin-bottom:9px"><input type="checkbox" id="inGabarito"> Incluir folha de gabarito</label>
+      <label class="check" style="margin-bottom:12px"><input type="checkbox" id="inRotulos"> Rótulos de ordem (C D U)</label>
+      <label class="linha-campo"><span>Semente (mesma semente = mesmas contas)</span>
+        <input id="inSeed" value="2026-matematica"></label>
+      <button class="btn-sec" id="btnNova" style="width:100%">🎲 Nova lista (sortear semente)</button>
+    </section>
+
+    <div class="rodape-painel">
+      <button class="btn-principal" id="btnImprimir">Gerar PDF / Imprimir</button>
+      <p class="dica">Na janela de impressão escolha <b>A4</b>, escala <b>100%</b> e desmarque <b>cabeçalhos e rodapés</b>.</p>
+    </div>
+  </aside>
+
+  <main class="palco">
+    <div class="topo">
+      <div class="status" id="status">—</div>
+      <div class="aviso" id="aviso"></div>
+      <div class="zoom">
+        <button id="btnFit" aria-pressed="true">Ajustar à tela</button>
+        <button id="btn100" aria-pressed="false">100%</button>
+      </div>
+    </div>
+    <div class="rolagem" id="rolagem">
+      <div id="paginas" style="display:flex;flex-direction:column;align-items:center;gap:26px"></div>
+    </div>
+  </main>
+</div>
+<script>
+(function(){
+'use strict';
+
+/* =========================================================
+   1. SEMENTE REPRODUZÍVEL
+   ========================================================= */
+function hashSeed(str){
+  let h = 2166136261 >>> 0;
+  const s = String(str);
+  for (let i = 0; i < s.length; i++){ h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; }
+  return h >>> 0;
+}
+function mulberry32(a){
+  return function(){
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+class RNG{
+  constructor(seed){ this.seed = String(seed); this.f = mulberry32(hashSeed(seed)); this.n = 0; }
+  next(){ this.n++; return this.f(); }
+  int(a, b){ return a + Math.floor(this.next() * (b - a + 1)); }
+  pick(arr){ return arr[this.int(0, arr.length - 1)]; }
+  chance(p){ return this.next() < p; }
+  shuffle(arr){
+    const a = arr.slice();
+    for (let i = a.length - 1; i > 0; i--){ const j = this.int(0, i); [a[i], a[j]] = [a[j], a[i]]; }
+    return a;
+  }
+}
+
+/* =========================================================
+   2. UTILITÁRIOS NUMÉRICOS
+   ========================================================= */
+const digs = n => Array.from(String(n), Number);
+const fromDigs = arr => Number(arr.join(''));
+const len = n => String(n).length;
+const randDigits = (rng, L) => { let n = rng.int(1, 9); for (let i = 1; i < L; i++) n = n * 10 + rng.int(0, 9); return n; };
+
+/* soma coluna a coluna (índice 0 = unidade) */
+function analisarSoma(ops){
+  const L = Math.max(...ops.map(o => len(o)));
+  const cols = []; let carry = 0;
+  for (let i = 0; i < L; i++){
+    let s = carry;
+    for (const o of ops){ const d = digs(o); s += (d[d.length - 1 - i] || 0); }
+    cols.push({ soma: s, carry: s >= 10 ? 1 : 0, digito: s % 10 });
+    carry = s >= 10 ? 1 : 0;
+  }
+  return { cols, carries: cols.map(c => c.carry), resultado: ops.reduce((a, b) => a + b, 0), overflow: carry };
+}
+
+/* subtração coluna a coluna (a >= b) */
+function analisarSub(a, b){
+  const L = len(a); const da = digs(a), db = digs(b);
+  const cols = []; let bin = 0;
+  for (let i = 0; i < L; i++){
+    const ai = da[da.length - 1 - i] || 0, bi = db[db.length - 1 - i] || 0;
+    let r = ai - bin - bi; const emp = r < 0 ? 1 : 0;
+    if (emp) r += 10;
+    cols.push({ a: ai, b: bi, bin, emp, digito: r });
+    bin = emp;
+  }
+  return { cols, borrows: cols.map(c => c.emp), resultado: a - b };
+}
+
+/* multiplicação coluna a coluna de A por m (1 algarismo) */
+function analisarMul(A, m){
+  const da = digs(A); const cols = []; let carry = 0;
+  for (let i = da.length - 1; i >= 0; i--){
+    const p = da[i] * m + carry;
+    cols.push({ digito: p % 10, carry: Math.floor(p / 10) });
+    carry = Math.floor(p / 10);
+  }
+  return { cols, carries: cols.map(c => c.carry), produto: A * m };
+}
+
+/* divisão longa */
+function analisarDiv(a, b){
+  const ds = digs(a); let resto = 0; const passos = [];
+  for (const d of ds){
+    const atual = resto * 10 + d;
+    const qd = Math.floor(atual / b);
+    resto = atual % b;
+    passos.push({ atual, qd, resto });
+  }
+  return { quociente: Math.floor(a / b), resto: a % b, passos, passosComResto: passos.filter((p, i) => i < passos.length - 1 && p.resto !== 0) };
+}
+
+/* =========================================================
+   3. VALIDADORES PEDAGÓGICOS (regra de cada nível)
+   ========================================================= */
+function validarAdd(q, nv){
+  const ops = q.operandos, ds = ops.map(digs);
+  const ok = (cond, motivo) => ({ ok: !!cond, motivo: cond ? '' : motivo });
+  if (ops.length < 2 || ops.some(o => o < 1)) return ok(false, 'parcelas inválidas');
+  if (q.resultado !== ops.reduce((a, b) => a + b, 0)) return ok(false, 'soma incorreta');
+  const an = analisarSoma(ops);
+  const nC = an.carries.filter(Boolean).length;
+  if (nv === 1) return ok(ops.length === 2 && ds.every(d => d.length === 1) && q.resultado <= 20,
+    'N1 exige 2 parcelas de 1 algarismo e soma <= 20');
+  if (nv === 2) return ok(ops.length === 2 && ds.every(d => d.length >= 2 && d.length <= 3) && nC === 0,
+    'N2 exige 2-3 algarismos e nenhuma reserva');
+  if (nv === 3){
+    const idx = an.carries.indexOf(1);
+    return ok(ops.length === 2 && ds.every(d => d.length >= 2 && d.length <= 3) &&
+      nC === 1 && (idx === 0 || idx === 1), 'N3 exige exatamente 1 reserva (unidade ou dezena)');
+  }
+  if (nv === 4){
+    let adj = false;
+    for (let i = 0; i < an.carries.length - 1; i++) if (an.carries[i] && an.carries[i + 1]) adj = true;
+    const temZero = ds.some(d => d.slice(0, -1).includes(0));
+    return ok(ops.length === 2 && ds.every(d => d.length >= 2 && d.length <= 3) &&
+      nC >= 2 && adj && temZero, 'N4 exige 2+ reservas consecutivas e um zero');
+  }
+  const quatro = ops.length === 2 && ds.every(d => d.length === 4);
+  const tres = ops.length === 3 && ds.every(d => d.length === 3);
+  return ok((quatro || tres) && nC >= 2 && !an.overflow,
+    'N5 exige 4 algarismos ou 3 parcelas de 3 algarismos com múltiplas reservas');
+}
+
+function validarSub(q, nv){
+  const a = q.operandos[0], b = q.operandos[1];
+  const ok = (cond, motivo) => ({ ok: !!cond, motivo: cond ? '' : motivo });
+  if (!(a > b && b > 0)) return ok(false, 'minuendo deve ser maior que o subtraendo');
+  if (q.resultado !== a - b) return ok(false, 'resultado incorreto');
+  const an = analisarSub(a, b);
+  const nE = an.borrows.filter(Boolean).length;
+  if (nv === 1) return ok(a <= 20 && len(b) === 1, 'N1 exige minuendo <= 20 e subtraendo de 1 algarismo');
+  if (nv === 2) return ok(len(a) >= 2 && len(a) <= 3 && nE === 0, 'N2 exige 2-3 algarismos sem recurso');
+  if (nv === 3) return ok(len(a) >= 2 && len(a) <= 3 && nE === 1, 'N3 exige exatamente 1 recurso');
+  if (nv === 4) return ok(len(a) >= 2 && len(a) <= 3 && nE >= 2 &&
+    !digs(a).slice(0, -1).includes(0), 'N4 exige 2+ recursos e nenhum zero no minuendo');
+  const temZero = digs(a).slice(0, -1).includes(0);
+  const corrente = an.cols.some(c => c.a === 0 && c.bin === 1);
+  return ok(len(a) >= 3 && temZero && corrente && nE >= 2,
+    'N5 exige zero no minuendo com empréstimo em cadeia');
+}
+
+function validarMul(q, nv){
+  const a = q.operandos[0], b = q.operandos[1];
+  const ok = (cond, motivo) => ({ ok: !!cond, motivo: cond ? '' : motivo });
+  if (q.resultado !== a * b) return ok(false, 'produto incorreto');
+  if (nv === 1){
+    const [x, y] = len(a) === 1 ? [a, b] : [b, a];
+    return ok(len(a) === 1 && len(b) === 1 && [2, 3, 4, 5, 10].includes(x) && y >= 2 && y <= 9,
+      'N1 exige tabuadas de 2 a 5 e 10');
+  }
+  if (nv === 2) return ok(a >= 6 && a <= 9 && b >= 6 && b <= 9, 'N2 exige tabuadas de 6 a 9');
+  const A = Math.max(a, b), m = Math.min(a, b);
+  if (nv === 3) return ok(len(A) >= 2 && len(A) <= 3 && len(m) === 1 &&
+    digs(A).every(d => d * m <= 9), 'N3 exige 2-3 algarismos x 1 algarismo sem reserva');
+  if (nv === 4) return ok(len(A) >= 2 && len(A) <= 3 && len(m) === 1 &&
+    analisarMul(A, m).carries.some(c => c > 0), 'N4 exige 2-3 algarismos x 1 algarismo com reserva');
+  return ok(len(A) >= 2 && len(A) <= 3 && b >= 11 && b <= 99 &&
+    digs(b).every(d => d >= 1), 'N5 exige 2-3 algarismos x 2 algarismos');
+}
+
+function validarDiv(q, nv){
+  const a = q.operandos[0], b = q.operandos[1];
+  const ok = (cond, motivo) => ({ ok: !!cond, motivo: cond ? '' : motivo });
+  if (!(b >= 2) || a <= b) return ok(false, 'dividendo/divisor inválidos');
+  const an = analisarDiv(a, b);
+  if (q.quociente !== an.quociente || q.resto !== an.resto) return ok(false, 'quociente/resto incorretos');
+  if (nv === 1) return ok(len(b) === 1 && a <= 50 && an.resto === 0 && an.quociente <= 9,
+    'N1 exige dividendo <= 50, divisor 1 algarismo, exata e quociente de 1 algarismo');
+  if (nv === 2) return ok(len(a) === 2 && len(b) === 1 && an.resto === 0 &&
+    digs(a).every(d => d % b === 0), 'N2 exige 2 algarismos / 1 algarismo exata e sem sobra intermediária');
+  if (nv === 3) return ok(len(a) >= 2 && len(a) <= 3 && len(b) === 1 && an.resto === 0 &&
+    len(an.quociente) === len(a) && an.passosComResto.length > 0,
+    'N3 exige exata, quociente com o mesmo número de algarismos e reagrupamento');
+  if (nv === 4) return ok(len(a) >= 2 && len(a) <= 3 && len(b) === 1 && an.resto !== 0,
+    'N4 exige resto diferente de zero');
+  const zeroInterno = len(an.quociente) >= 3 && String(an.quociente).slice(1, -1).includes('0');
+  return ok(zeroInterno || len(b) === 2, 'N5 exige zero no quociente ou divisor de 2 algarismos');
+}
+
+function validar(q, nv){
+  const f = { add: validarAdd, sub: validarSub, mul: validarMul, div: validarDiv }[q.op];
+  try { return f(q, nv); } catch (e) { return { ok: false, motivo: 'erro: ' + e.message }; }
+}
+
+/* =========================================================
+   4. CONSTRUTORES DE CONTAS
+   ========================================================= */
+const mkAdd = (a, b) => ({ op: 'add', operandos: [a, b], resultado: a + b });
+const mkSub = (a, b) => ({ op: 'sub', operandos: [a, b], resultado: a - b });
+const mkMul = (a, b) => ({ op: 'mul', operandos: [a, b], resultado: a * b });
+const mkDiv = (a, b) => {
+  const an = analisarDiv(a, b);
+  return { op: 'div', operandos: [a, b], quociente: an.quociente, resto: an.resto, resultado: an.quociente };
+};
+
+/* soma coluna a coluna (unidade -> ordem mais alta) seguindo o padrão de reservas */
+function construirSoma(rng, termos, L, padrao){
+  const cols = Array.from({ length: termos }, () => []);
+  let carryIn = 0;
+  for (let i = 0; i < L; i++){
+    const alvo = padrao[i] ? 1 : 0;
+    let achou = false;
+    for (let k = 0; k < 500; k++){
+      const ds = [];
+      for (let j = 0; j < termos; j++) ds.push(rng.int(i === L - 1 ? 1 : 0, 9));
+      const soma = ds.reduce((s, x) => s + x, 0) + carryIn;
+      if ((soma >= 10 ? 1 : 0) === alvo){
+        ds.forEach((d, j) => cols[j].push(d));
+        carryIn = alvo; achou = true; break;
+      }
+    }
+    if (!achou) return null;
+  }
+  return cols.map(c => fromDigs(c.slice().reverse()));
+}
+
+function genAdd(rng, nv){
+  if (nv === 1){
+    const a = rng.int(2, 9), b = rng.int(1, 9);
+    return a + b <= 20 ? mkAdd(a, b) : null;
+  }
+  let termos = 2, L, padrao;
+  if (nv === 2){ L = rng.int(2, 3); padrao = Array(L).fill(0); }
+  else if (nv === 3){
+    L = rng.int(2, 3); padrao = Array(L).fill(0);
+    padrao[rng.int(0, Math.min(1, L - 2))] = 1;
+  } else if (nv === 4){
+    L = rng.int(2, 3); padrao = Array(L).fill(0);
+    if (L < 3) L = 3;
+    const ini = rng.int(0, L - 2);
+    padrao[ini] = 1; padrao[ini + 1] = 1;
+    if (L === 3 && ini === 0 && rng.chance(0.35)) padrao[2] = 1;
+  } else {
+    if (rng.chance(0.5)){ termos = 2; L = 4; } else { termos = 3; L = 3; }
+    padrao = Array(L).fill(0);
+    const quantos = rng.int(2, Math.min(3, L - 1));
+    rng.shuffle([...Array(L - 1).keys()]).slice(0, quantos).forEach(i => padrao[i] = 1);
+  }
+  for (let t = 0; t < 80; t++){
+    const nums = construirSoma(rng, termos, L, padrao);
+    if (!nums) continue;
+    if (nv === 4 && !nums.some(n => digs(n).slice(0, -1).includes(0))) continue;
+    const q = { op: 'add', operandos: nums, resultado: nums.reduce((a, b) => a + b, 0) };
+    if (validar(q, nv).ok) return q;
+  }
+  return null;
+}
+
+/* subtração coluna a coluna seguindo o padrão de empréstimos */
+function construirSub(rng, L, padrao, semZero){
+  const A = [], B = [];
+  let bin = 0;
+  for (let i = 0; i < L; i++){
+    const alvo = padrao[i] ? 1 : 0;
+    let achou = false;
+    for (let k = 0; k < 500; k++){
+      const b = rng.int(i === L - 1 ? 1 : 0, 9);
+      if (alvo){
+        const maxA = Math.min(9, b + bin - 1);
+        const minA = (i === L - 1 || semZero) ? 1 : 0;
+        if (minA > maxA) continue;
+        const a = rng.int(minA, maxA);
+        A.unshift(a); B.unshift(b); achou = true; break;
+      } else {
+        const minA = Math.max((i === L - 1 || semZero) ? 1 : 0, b + bin);
+        if (minA > 9) continue;
+        const a = rng.int(minA, 9);
+        A.unshift(a); B.unshift(b); achou = true; break;
+      }
+    }
+    if (!achou) return null;
+    bin = alvo;
+  }
+  return { a: fromDigs(A), b: fromDigs(B) };
+}
+
+function genSubZero(rng){
+  for (let t = 0; t < 700; t++){
+    const L = rng.int(3, 4);
+    const ad = [rng.int(1, 9)];
+    const quantosZeros = rng.int(1, Math.min(2, L - 1));
+    const pos = rng.shuffle([...Array(L - 1).keys()]).slice(0, quantosZeros);
+    for (let i = 1; i < L; i++) ad.push(pos.includes(i - 1) ? 0 : rng.int(1, 9));
+    const A = fromDigs(ad);
+    if (A < 100) continue;
+    const B = rng.int(11, A - 1);
+    const an = analisarSub(A, B);
+    if (an.borrows.filter(Boolean).length < 2) continue;
+    if (!an.cols.some(c => c.a === 0 && c.bin === 1)) continue;
+    return mkSub(A, B);
+  }
+  return null;
+}
+
+function genSub(rng, nv){
+  if (nv === 1){
+    const a = rng.int(5, 20), b = rng.int(1, 9);
+    return a - b >= 0 ? mkSub(a, b) : null;
+  }
+  if (nv === 5) return genSubZero(rng);
+  const L = nv === 4 ? 3 : rng.int(2, 3);
+  const padrao = Array(L).fill(0);
+  if (nv === 3) padrao[rng.int(0, Math.min(1, L - 2))] = 1;
+  if (nv === 4){
+    const idxs = rng.shuffle([...Array(L - 1).keys()]).slice(0, rng.int(2, L - 1));
+    idxs.forEach(i => padrao[i] = 1);
+  }
+  for (let t = 0; t < 80; t++){
+    const par = construirSub(rng, L, padrao, nv === 4);
+    if (!par) continue;
+    const q = mkSub(par.a, par.b);
+    if (validar(q, nv).ok) return q;
+  }
+  return null;
+}
+
+function genMul(rng, nv){
+  if (nv === 1){
+    const x = rng.pick([2, 3, 4, 5, 10]), y = rng.int(2, 9);
+    return rng.chance(0.5) ? mkMul(x, y) : mkMul(y, x);
+  }
+  if (nv === 2) return mkMul(rng.int(6, 9), rng.int(6, 9));
+  const L = rng.int(2, 3);
+  if (nv === 3){
+    const m = rng.int(2, 4);
+    const lim = Math.floor(9 / m);
+    const ad = [rng.int(1, lim)];
+    for (let i = 1; i < L; i++) ad.push(rng.chance(0.15) ? 0 : rng.int(1, lim));
+    return mkMul(fromDigs(ad), m);
+  }
+  if (nv === 4){
+    for (let t = 0; t < 400; t++){
+      const ad = digs(randDigits(rng, L));
+      if (rng.chance(0.4)) ad[rng.int(1, L - 1)] = 0;
+      const m = rng.int(3, 9);
+      const q = mkMul(fromDigs(ad), m);
+      if (validar(q, 4).ok) return q;
+    }
+    return null;
+  }
+  for (let t = 0; t < 400; t++){
+    const A = randDigits(rng, L);
+    const B = rng.int(11, 99);
+    if (digs(B).includes(0)) continue;
+    const q = mkMul(A, B);
+    if (validar(q, 5).ok) return q;
+  }
+  return null;
+}
+
+function genDiv(rng, nv){
+  if (nv === 1){
+    const b = rng.int(2, 9), q = rng.int(2, 9);
+    return b * q <= 50 ? mkDiv(b * q, b) : null;
+  }
+  if (nv === 2){
+    const b = rng.int(2, 4), lim = Math.floor(9 / b);
+    const q1 = rng.int(1, lim), q2 = rng.int(1, lim);
+    return mkDiv((b * q1) * 10 + b * q2, b);
+  }
+  if (nv === 3){
+    for (let t = 0; t < 300; t++){
+      const k = rng.int(2, 3), b = rng.int(2, 9);
+      const maxQ = Math.floor((Math.pow(10, k) - 1) / b);
+      if (maxQ < Math.pow(10, k - 1)) continue;
+      const q = rng.int(Math.pow(10, k - 1), maxQ);
+      const a = b * q;
+      const cand = mkDiv(a, b);
+      if (validar(cand, 3).ok) return cand;
+    }
+    return null;
+  }
+  if (nv === 4){
+    for (let t = 0; t < 300; t++){
+      const b = rng.int(2, 9);
+      const q = rng.int(10, Math.floor(999 / b));
+      const r = rng.int(1, b - 1);
+      const a = b * q + r;
+      if (len(a) < 2 || len(a) > 3) continue;
+      const cand = mkDiv(a, b);
+      if (validar(cand, 4).ok) return cand;
+    }
+    return null;
+  }
+  if (rng.chance(0.5)){
+    for (let t = 0; t < 400; t++){
+      const b = rng.int(2, 9);
+      const q = rng.int(1, 9) * 100 + rng.int(1, 9);
+      const a = b * q;
+      if (a > 999 || a < 100) continue;
+      const cand = mkDiv(a, b);
+      if (validar(cand, 5).ok) return cand;
+    }
+  }
+  for (let t = 0; t < 400; t++){
+    const b = rng.int(12, 24);
+    const q = rng.int(10, 40);
+    const a = b * q;
+    if (a > 999 || a < 100) continue;
+    const cand = mkDiv(a, b);
+    if (validar(cand, 5).ok) return cand;
+  }
+  return null;
+}
+
+/* =========================================================
+   6. LAYOUT DAS CONTAS ARMADAS
+   ========================================================= */
+const H = { rot:3.2, carry:6.0, term:5.2, traco:1.0, resp:10.5, respMul:12.6, parcial:13.2, divTop:10.5, divWork:28 };
+const CW_POR_COL = { 2: 8, 3: 6.5, 4: 5.4 };
+const alturaTermo = cw => Math.max(5.2, +(cw * 0.7 * 1.38).toFixed(2));
+const ROTULOS = ['U','D','C','UM','DM','CM'];
+
+function renderGrade(maxL, linhas){
+  const cols = `3.4mm repeat(${maxL}, var(--cw))`;
+  const rows = linhas.map(l => l.h + 'mm').join(' ');
+  let out = `<div class="grade" style="grid-template-columns:${cols};grid-template-rows:${rows}">`;
+  linhas.forEach((l, ri) => {
+    (l.cels || []).forEach(c => {
+      out += `<div class="cel ${c.cls || ''}" style="grid-row:${ri + 1};grid-column:${c.c1}${c.c2 ? '/' + c.c2 : ''}">${c.txt == null ? '' : c.txt}</div>`;
+    });
+  });
+  return out + '</div>';
+}
+
+function alturaDe(linhas){ return linhas.reduce((s, l) => s + l.h, 0) + 1.6; }
+
+/* quantas colunas de algarismos a conta precisa */
+function colunasDe(q){
+  if (q.op === 'div') return len(q.operandos[0]);
+  let m = Math.max(...q.operandos.map(o => len(o)), len(q.resultado));
+  if (q.op === 'mul'){
+    const m1 = q.operandos[1] % 10, m2 = Math.floor(q.operandos[1] / 10);
+    const p1 = q.operandos[0] * m1;
+    const p2 = m2 > 0 ? q.operandos[0] * m2 : 0;
+    m = Math.max(m, len(p1), p2 ? len(p2) + 1 : 0);
+  }
+  return m;
+}
+
+/* ---- adição / subtração / multiplicação (armadas verticalmente) ---- */
+function modeloVertical(q, opt){
+  const ehMul = q.op === 'mul';
+  const termos = q.operandos.slice();
+  const dg = termos.map(digs);
+  const sinal = q.op === 'add' ? '+' : q.op === 'sub' ? '\u2212' : '\u00d7';
+  let maxL = colunasDe(q);
+  let p1 = 0, p2 = 0;
+  if (ehMul){
+    const m1 = termos[1] % 10, m2 = Math.floor(termos[1] / 10);
+    p1 = termos[0] * m1;
+    if (m2 > 0) p2 = termos[0] * m2;
+  }
+  if (opt.maxL) maxL = Math.max(maxL, opt.maxL);
+  const N = maxL + 1;
+  const termH = alturaTermo(opt.cw || 5.4);
+  const vazias = Math.max(0, (opt.minTermos || termos.length) - termos.length);
+  const linhas = [];
+  if (opt.rotulos){
+    const cels = [];
+    for (let j = 0; j < maxL; j++) cels.push({ c1: 2 + j, cls: 'rot', txt: ROTULOS[maxL - 1 - j] || '' });
+    linhas.push({ h: H.rot, cels });
+  }
+  linhas.push({ h: H.carry, cels: [] });
+  for (let v = 0; v < vazias; v++) linhas.push({ h: termH, cels: [] });
+  dg.forEach((d, i) => {
+    const cels = [];
+    if (i === dg.length - 1) cels.push({ c1: 1, cls: 'sinal', txt: sinal });
+    d.forEach((x, k) => cels.push({ c1: N - d.length + 1 + k, txt: String(x) }));
+    linhas.push({ h: termH, cels });
+  });
+  linhas.push({ h: H.traco, cels: [{ c1: 2, c2: N + 1, cls: 'traco' }] });
+  if (ehMul && p2){
+    // Na folha do aluno os produtos parciais ficam em branco; só o gabarito os preenche.
+    const d1 = digs(p1), d2 = digs(p2);
+    const c1 = [];
+    if (opt.gabarito) d1.forEach((x, k) => c1.push({ c1: N - d1.length + 1 + k, txt: String(x) }));
+    linhas.push({ h: H.parcial, cels: c1 });
+    const c2 = opt.gabarito ? [{ c1: 1, cls: 'sinal', txt: '+' }] : [];
+    if (opt.gabarito) d2.forEach((x, k) => c2.push({ c1: N - 1 - d2.length + 1 + k, txt: String(x) }));
+    linhas.push({ h: H.parcial, cels: c2 });
+    linhas.push({ h: H.traco, cels: [{ c1: 2, c2: N + 1, cls: 'traco' }] });
+  }
+  const rd = digs(q.resultado);
+  const celsResp = opt.gabarito
+    ? rd.map((x, k) => ({ c1: N - rd.length + 1 + k, cls: 'resp', txt: String(x) }))
+    : [];
+  linhas.push({ h: ehMul ? H.respMul : H.resp, cels: celsResp });
+  return { linhas, maxL, html: renderGrade(maxL, linhas) };
+}
+
+/* ---- divisão (chave brasileira) ---- */
+function modeloDivisao(q, opt){
+  const dA = digs(q.operandos[0]), dB = digs(q.operandos[1]);
+  const maxDvd = Math.max(dA.length, opt.maxDvd || 0);
+  const mini = (d, cls) => `<div class="mini-grade" style="grid-template-columns:repeat(${d.length},var(--cw))">` +
+    d.map(x => `<div class="cel ${cls || ''}">${x}</div>`).join('') + '</div>';
+  const quoc = opt.gabarito ? mini(digs(q.quociente), 'resp') : '';
+  const qr = opt.gabarito ? `<span class="qr">Q = ${q.quociente} / R = ${q.resto}</span>` : '';
+  const html = `<div class="divisao"><div class="chave" style="grid-template-columns:calc(${maxDvd} * var(--cw)) .42mm max-content">
+      <div class="dvd">${mini(dA)}</div>
+      <div class="vbar"></div>
+      <div class="dsr">${mini(dB)}</div>
+      <div class="trab">${qr}</div>
+      <div class="quot">${quoc}</div>
+    </div></div>`;
+  return { html };
+}
+
+function htmlConta(q, opt){
+  return q.op === 'div' ? modeloDivisao(q, opt).html : modeloVertical(q, opt).html;
+}
+function alturaConta(q, opt){
+  if (q.op === 'div') return H.divTop + H.divWork + 4.4;
+  return alturaDe(modeloVertical(q, opt).linhas) + 3.2;
+}
+
+/* =========================================================
+   7. MONTAGEM DA FOLHA A4
+   ========================================================= */
+const OP_NOME = { add: 'Adição', sub: 'Subtração', mul: 'Multiplicação', div: 'Divisão' };
+const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+function htmlCabecalho(cfg, titulo, selo){
+  return `<header class="cabecalho">
+    <div class="cab-topo">
+      <div class="escola">${esc(cfg.escola)}</div>
+      ${selo ? `<div class="selo">${selo}</div>` : ''}
+    </div>
+    <div class="cab-linhas">
+      <div class="campo"><b>Professor(a):</b><span class="valor">${esc(cfg.professor)}</span></div>
+      <div class="campo" style="flex:.55"><b>Turma:</b><span class="valor">${esc(cfg.turma)}</span></div>
+      <div class="campo" style="flex:.55"><b>Data:</b><span class="valor">${esc(cfg.data)}</span></div>
+    </div>
+    ${cfg.mostrarNome ? `<div class="cab-nome"><div class="campo"><b>Nome:</b><span class="valor"></span></div></div>` : ''}
+    <div class="cab-titulo">${titulo}</div>
+  </header>`;
+}
+
+function montarPagina(cfg, questoes, meta, gabarito){
+  const estilo = `--cw:${meta.cw}mm;--fs:${(meta.cw * 0.7).toFixed(2)}mm`;
+  const celulas = questoes.map((q, i) =>
+    `<div class="q"><div class="num">${i + 1})</div>${htmlConta(q, {
+      rotulos: cfg.rotulos, gabarito, cw: meta.cw,
+      maxL: meta.maxL, minTermos: meta.minTermos, maxDvd: meta.maxDvd
+    })}</div>`
+  ).join('');
+  const titulo = gabarito ? `Gabarito — ${meta.titulo}` : meta.titulo;
+  return `<section class="page" style="${estilo}">
+    ${htmlCabecalho(cfg, titulo, gabarito ? 'Gabarito' : '')}
+    <div class="folha-grade" style="grid-template-columns:repeat(${meta.cols},minmax(0,1fr));grid-auto-rows:minmax(${meta.rowMin}mm,1fr)">${celulas}</div>
+  </section>`;
+}
+
+/* =========================================================
+   5. GERAÇÃO DE UMA FOLHA (com controle de repetição)
+   ========================================================= */
+const GERADORES = { add: genAdd, sub: genSub, mul: genMul, div: genDiv };
+
+function gerarQuestao(op, nv, rng){
+  for (let t = 0; t < 900; t++){
+    const q = GERADORES[op](rng, nv);
+    if (q && validar(q, nv).ok) return q;
+  }
+  throw new Error('Não foi possível gerar ' + op + ' nível ' + nv);
+}
+
+const chaveDe = q => q.op + ':' + q.operandos.join('x');
+
+function gerarFolha(cfg){
+  const { lista, qtd, seed } = cfg;
+  const vistos = new Set(); const out = [];
+  for (let i = 0; i < qtd; i++){
+    const alvo = lista[i % lista.length];
+    let achou = null;
+    for (let t = 0; t < 900; t++){
+      let cand;
+      try { cand = gerarQuestao(alvo.op, alvo.nivel, new RNG(seed + '|' + i + '|' + t)); }
+      catch (e){ continue; }
+      const k = chaveDe(cand);
+      if (!vistos.has(k)){ vistos.add(k); achou = cand; break; }
+    }
+    if (!achou) break;
+    out.push(achou);
+  }
+  return { questoes: out, faltando: qtd - out.length };
+}
+
+/* =========================================================
+   8. INTERFACE
+   ========================================================= */
+const $ = id => document.getElementById(id);
+const DESCR = {
+  add: {
+    1: 'Fatos básicos: duas parcelas de 1 algarismo, soma até 20.',
+    2: 'Sem reserva: 2 ou 3 algarismos e a soma de cada ordem é no máximo 9.',
+    3: 'Uma reserva: reagrupamento apenas na unidade ou apenas na dezena.',
+    4: 'Reservas em cadeia: duas ou mais ordens consecutivas, incluindo zeros.',
+    5: 'Números maiores: parcelas de 4 algarismos ou três parcelas de 3 algarismos.'
+  },
+  sub: {
+    1: 'Fatos básicos: minuendo até 20 e subtraendo de 1 algarismo.',
+    2: 'Sem recurso: cada algarismo do minuendo é maior ou igual ao do subtraendo.',
+    3: 'Um recurso: um único empréstimo entre ordens vizinhas.',
+    4: 'Recursos múltiplos: mais de um empréstimo, sem zeros no minuendo.',
+    5: 'Recurso através do zero: 300 − 147, 502 − 268, 1.004 − 459.'
+  },
+  mul: {
+    1: 'Fatos fundamentais: tabuadas de 2 a 5 e 10.',
+    2: 'Fatos avançados: tabuadas de 6 a 9.',
+    3: '2 ou 3 algarismos × 1 algarismo, sem reserva.',
+    4: '2 ou 3 algarismos × 1 algarismo, com reserva e zeros.',
+    5: '2 ou 3 algarismos × 2 algarismos, com produtos parciais.'
+  },
+  div: {
+    1: 'Fatos inversos da tabuada: dividendo até 50, divisão exata.',
+    2: '2 algarismos ÷ 1 algarismo, exata, sem sobra intermediária.',
+    3: '2 ou 3 algarismos ÷ 1 algarismo, exata, com reagrupamento.',
+    4: 'Divisão não exata: identificar quociente e resto.',
+    5: 'Zero no quociente (618 ÷ 3) ou divisor de 2 algarismos (480 ÷ 12).'
+  }
+};
+
+const estado = {
+  op: 'mista', nivel: 2, cols: 4, qtd: 16, gabarito: false, rotulos: false,
+  niveis: { add: 2, sub: 2, mul: 2, div: 2 },
+  selecionadas: { add: true, sub: true, mul: true, div: true }
+};
+
+function listaAlvos(){
+  if (estado.op !== 'mista') return [{ op: estado.op, nivel: estado.nivel }];
+  const ops = ['add', 'sub', 'mul', 'div'].filter(o => estado.selecionadas[o]);
+  return (ops.length ? ops : ['add']).map(o => ({ op: o, nivel: estado.niveis[o] }));
+}
+
+function textoNivel(){
+  if (estado.op !== 'mista') return 'Nível ' + estado.nivel;
+  const ns = [...new Set(listaAlvos().map(o => o.nivel))].sort();
+  return ns.length === 1 ? 'Nível ' + ns[0] : 'Níveis ' + ns.join(' / ');
+}
+
+function tituloFolha(){
+  const ops = listaAlvos().map(o => OP_NOME[o.op]);
+  const nomes = ops.length === 1 ? ops[0] : ops.length === 2 ? ops[0] + ' e ' + ops[1]
+    : ops.slice(0, -1).join(', ') + ' e ' + ops[ops.length - 1];
+  return `Atividades de Matemática · ${nomes} · ${textoNivel()}`;
+}
+
+function exemploDe(op, nv){
+  let q;
+  try { q = gerarQuestao(op, nv, new RNG('exemplo|' + op + '|' + nv)); }
+  catch (e) { return '—'; }
+  if (op === 'div') return `${q.operandos[0]} ÷ ${q.operandos[1]} = ?`;
+  const sinal = op === 'add' ? '+' : op === 'sub' ? '−' : '×';
+  return q.operandos.join(' ' + sinal + ' ') + ' = ?';
+}
+
+function atualizarExemplo(){
+  const alvos = listaAlvos();
+  $('exConta').textContent = alvos.map(a => exemploDe(a.op, a.nivel)).join('     ');
+  $('exRegra').textContent = DESCR[alvos[0].op][alvos[0].nivel];
+}
+
+function marcarSeg(id, attr, valor){
+  [...$(id).querySelectorAll('button')].forEach(b => {
+    b.setAttribute('aria-pressed', String(b.dataset[attr] === String(valor)));
+  });
+}
+
+function montarNiveisMistos(){
+  const box = $('niveisMistos');
+  box.innerHTML = ['add', 'sub', 'mul', 'div'].map(op =>
+    `<div class="linha-op">
+      <label class="check"><input type="checkbox" data-mop="${op}" ${estado.selecionadas[op] ? 'checked' : ''}> ${OP_NOME[op]}</label>
+      <select data-mnv="${op}">${[1, 2, 3, 4, 5].map(n => `<option value="${n}" ${estado.niveis[op] === n ? 'selected' : ''}>Nível ${n}</option>`).join('')}</select>
+    </div>`).join('');
+  box.querySelectorAll('[data-mop]').forEach(el => el.addEventListener('change', () => {
+    estado.selecionadas[el.dataset.mop] = el.checked;
+    atualizarExemplo(); render();
+  }));
+  box.querySelectorAll('[data-mnv]').forEach(el => el.addEventListener('change', () => {
+    estado.niveis[el.dataset.mnv] = Number(el.value);
+    atualizarExemplo(); render();
+  }));
+}
+
+let timerRender = null;
+const agendar = () => { clearTimeout(timerRender); timerRender = setTimeout(render, 60); };
+
+function lerCfg(){
+  return {
+    escola: $('inEscola').value, professor: $('inProfessor').value,
+    turma: $('inTurma').value, data: $('inData').value,
+    mostrarNome: $('inNome').checked,
+    rotulos: $('inRotulos').checked,
+    gabarito: $('inGabarito').checked
+  };
+}
+
+function render(){
+  const cfg = lerCfg();
+  const seed = $('inSeed').value.trim() || '0';
+  const alvos = listaAlvos();
+  const folha = gerarFolha({ lista: alvos, qtd: estado.qtd, seed });
+  const qs = folha.questoes;
+  if (!qs.length){ $('paginas').innerHTML = ''; return; }
+
+  const titulo = tituloFolha();
+  let cols = estado.cols, cw = CW_POR_COL[cols];
+  let n = qs.length;
+  let aviso = folha.faltando > 0 ? `Este nível tem apenas ${n} contas distintas.` : '';
+  const paginas = $('paginas');
+  paginas.style.zoom = '';
+
+  for (let iter = 0; iter < 6; iter++){
+    const amostra = qs.slice(0, n);
+    const maxL = Math.max(...amostra.map(colunasDe));
+    const maxDvd = Math.max(0, ...amostra.filter(q => q.op === 'div').map(q => len(q.operandos[0])));
+    const minTermos = Math.max(2, ...amostra.filter(q => q.op !== 'div').map(q => q.operandos.length));
+    const opcoes = { rotulos: cfg.rotulos, cw, maxL, minTermos, maxDvd };
+    const rowMin = Math.max(...amostra.map(q => alturaConta(q, opcoes)));
+    const meta = { cols, cw, rowMin: rowMin.toFixed(2), titulo, maxL, minTermos, maxDvd };
+    let html = montarPagina(cfg, amostra, meta, false);
+    if (cfg.gabarito) html += montarPagina(cfg, amostra, meta, true);
+    paginas.innerHTML = html;
+    const grade = paginas.querySelector('.folha-grade');
+    if (grade.scrollHeight <= grade.clientHeight + 1) break;
+    if (cols < 4){ cols++; cw = CW_POR_COL[cols]; continue; }
+    const pxmm = 96 / 25.4;
+    const linhasMax = Math.max(2, Math.floor((grade.clientHeight / pxmm + 1) / (rowMin + 1)));
+    const novo = linhasMax * cols;
+    if (novo >= n) break;
+    n = novo;
+    aviso = `Ajustado para ${n} questões para caber em uma única folha.`;
+  }
+
+  $('status').innerHTML = `<b>${n} questões</b> · ${cols} colunas · ${esc(textoNivel())} · semente <b>${esc(seed)}</b>`;
+  if (cols !== estado.cols){
+    aviso = `Ajustado para ${cols} colunas para manter o espaço mínimo de cálculo em 1 folha.` + (aviso ? ' ' + aviso : '');
+  }
+  $('aviso').textContent = aviso;
+  aplicarZoom();
+}
+
+/* ---- zoom da pré-visualização ---- */
+const ZOOM = { fit: true };
+function aplicarZoom(){
+  const paginas = $('paginas');
+  if (!paginas) return;
+  if (!ZOOM.fit){ paginas.style.zoom = ''; return; }
+  const area = $('rolagem');
+  const paginaL = 210 * 96 / 25.4;
+  const paginaA = 297 * 96 / 25.4;
+  const zL = (area.clientWidth - 56) / paginaL;
+  const zA = (area.clientHeight - 44) / paginaA;
+  const z = Math.min(1, Math.max(0.35, Math.min(zL, zA)));
+  paginas.style.zoom = z.toFixed(3);
+}
+
+/* ---- eventos ---- */
+['inEscola', 'inProfessor', 'inTurma', 'inData', 'inSeed'].forEach(id =>
+  $(id).addEventListener('input', agendar));
+['inNome', 'inRotulos', 'inGabarito'].forEach(id => $(id).addEventListener('change', render));
+
+$('segOperacao').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  estado.op = b.dataset.op;
+  marcarSeg('segOperacao', 'op', estado.op);
+  const misto = estado.op === 'mista';
+  $('segNivel').style.display = misto ? 'none' : '';
+  $('niveisMistos').style.display = misto ? 'flex' : 'none';
+  $('linhaNivel').style.display = misto ? 'none' : '';
+  $('rotuloNivel').textContent = misto ? 'Níveis por operação' : 'Nível';
+  atualizarExemplo(); render();
+});
+
+$('segNivel').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  estado.nivel = Number(b.dataset.nv);
+  marcarSeg('segNivel', 'nv', estado.nivel);
+  atualizarExemplo(); render();
+});
+
+$('segColunas').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  estado.cols = Number(b.dataset.col);
+  marcarSeg('segColunas', 'col', estado.cols);
+  render();
+});
+
+$('selQtd').addEventListener('change', e => { estado.qtd = Number(e.target.value); render(); });
+$('btnNova').addEventListener('click', () => {
+  $('inSeed').value = Math.random().toString(36).slice(2, 10);
+  render();
+});
+$('btnImprimir').addEventListener('click', () => window.print());
+
+$('btnFit').addEventListener('click', () => {
+  ZOOM.fit = true;
+  $('btnFit').setAttribute('aria-pressed', 'true');
+  $('btn100').setAttribute('aria-pressed', 'false');
+  aplicarZoom();
+});
+$('btn100').addEventListener('click', () => {
+  ZOOM.fit = false;
+  $('btnFit').setAttribute('aria-pressed', 'false');
+  $('btn100').setAttribute('aria-pressed', 'true');
+  aplicarZoom();
+});
+window.addEventListener('resize', () => { if (ZOOM.fit) aplicarZoom(); });
+
+/* ---- init ---- */
+$('segNivel').innerHTML = [1, 2, 3, 4, 5].map(n => `<button data-nv="${n}">N${n}</button>`).join('');
+marcarSeg('segOperacao', 'op', estado.op);
+marcarSeg('segNivel', 'nv', estado.nivel);
+marcarSeg('segColunas', 'col', estado.cols);
+montarNiveisMistos();
+$('segNivel').style.display = 'none';
+$('niveisMistos').style.display = 'flex';
+$('linhaNivel').style.display = 'none';
+atualizarExemplo();
+render();
+
+/* =========================================================
+   9. API PARA TESTES
+   ========================================================= */
+window.MG = {
+  RNG, gerarQuestao, validar, gerarFolha, chaveDe,
+  analisarSoma, analisarSub, analisarMul, analisarDiv,
+  alturaConta, htmlConta, montarPagina, listaAlvos, estado, render,
+  DESCR,
+  gerarAmostra(op, nv, n){
+    const out = [];
+    for (let i = 0; i < n; i++) out.push(gerarQuestao(op, nv, new RNG('auditoria|' + op + '|' + nv + '|' + i)));
+    return out;
+  }
+};
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,5 @@
+trabalho/node_modules/
+trabalho/*.pdf
+trabalho/capturas/*.pdf
+Thumbs.db
+.DS_Store
